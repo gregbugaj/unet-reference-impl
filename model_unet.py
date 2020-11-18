@@ -36,9 +36,10 @@ class BaseConvBlock(nn.HybridBlock):
         # here, I use padding to get the output of the same shape as input
         self.conv1 = nn.Conv2D(channels, kernel_size=3, padding=1)
         self.norm1 = norm_layer(regularization)
-
         self.conv2 = nn.Conv2D(channels, kernel_size=3, padding=1)
-        self.norm2 = norm_layer(regularization)
+        self.dropout = nn.Dropout(.5)
+
+        # self.norm2 = norm_layer(regularization)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         # BatchNorm input will typically be unnormalized activations from the previous layer,
@@ -47,15 +48,17 @@ class BaseConvBlock(nn.HybridBlock):
 
         res = self.residual(x)
         x = self.conv1(x)
-        x = self.norm1(x)
+        # x = self.norm1(x)
         x = F.LeakyReLU(x)  
         
         x = self.conv2(x)
-        x = self.norm2(x)  
+        x = self.norm1(x)
+        # x = self.norm2(x)  
 
         connection = nd.add(res, x)
+        x = self.dropout(connection)
         x = F.LeakyReLU(connection)
-
+        
         return x
 
 class UpsampleConvLayer(nn.HybridBlock):
@@ -87,10 +90,11 @@ class DownSampleBlock(nn.HybridBlock):
         self.channels = channels
         self.conv = BaseConvBlock(channels, regularization)
         self.maxPool = nn.MaxPool2D(pool_size=2, strides=2)    
+        
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         x = self.maxPool(x)
-        x = self.conv(x)
+        x = self.conv(x)        
         # logging.info(x.shape)
         return x
 
@@ -107,7 +111,6 @@ class UpSampleBlock(nn.HybridSequential):
             raise ValueError("Unknow regularization type : %s" %(regularization))
 
         self.conv = BaseConvBlock(channels, regularization)
-        # self.dropout = nn.Dropout(.3)
 
     def hybrid_forward(self, F, x1, *args, **kwargs):
         x2 = args[0]
@@ -127,7 +130,6 @@ class UpSampleBlock(nn.HybridSequential):
                                diffX // 2, diffX - diffX // 2))
 
         x = nd.concat(x1, x2, dim=1)
-        # x = self.dropout(x)
         # logging.info(x.shape)
         return self.conv(x)
 

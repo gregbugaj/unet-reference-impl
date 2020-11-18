@@ -59,8 +59,6 @@ CLASSES = ['background', 'form']
 
 
 def _get_batch(batch, ctx, is_even_split=True):
-    print("_get_batch")
-
     features, labels = batch
     if labels.dtype != features.dtype:
         labels = labels.astype(features.dtype)
@@ -120,7 +118,6 @@ def train(train_iter, test_iter, net, loss, trainer, ctx, num_epochs, log_dir='.
             log.info("[Epoch {}] Set learning rate to {}".format(epoch, new_lr))
 
         print('epoch # : %d' %(epoch))
-        print('train_iter # : %s' %(train_iter))
         train_l_sum, train_acc_sum, n, m, start = 0.0, 0.0, 0, 0, time.time()
         btic = time.time()
 
@@ -143,8 +140,7 @@ def train(train_iter, test_iter, net, loss, trainer, ctx, num_epochs, log_dir='.
                                   for y_hat, y in zip(y_hats, ys)])
             m += sum([y.size for y in ys])
 
-            sw.add_scalar(tag='train_l_sum', value=train_l_sum,
-                          global_step=global_step)
+            sw.add_scalar(tag='train_l_sum', value=train_l_sum, global_step=global_step)
             global_step += 1
 
         speed = batch_size / (time.time() - btic)
@@ -153,21 +149,15 @@ def train(train_iter, test_iter, net, loss, trainer, ctx, num_epochs, log_dir='.
 
         print('epoch %d, loss %.5f, train acc %.5f, test acc %.5f, time %.5f sec'
               % (epoch + 1, train_l_sum / n, train_acc_sum / m, test_acc, epoch_time))
-        print('epoch %d, loss %.5f, train acc %.5f, test acc %.5f, time %.5f sec'
-              % (epoch + 1, train_l_sum / n, train_acc_sum / m, test_acc, epoch_time))
 
         sw.add_scalar(tag='loss', value=(train_l_sum / n), global_step=epoch)
         # logging training/validation/test accuracy
-        sw.add_scalar(tag='accuracy_curves', value=(
-            'train_acc', train_acc_sum / m), global_step=epoch)
-        sw.add_scalar(tag='accuracy_curves', value=(
-            'test_acc', test_acc), global_step=epoch)
+        sw.add_scalar(tag='accuracy_curves', value=('train_acc', train_acc_sum / m), global_step=epoch)
+        sw.add_scalar(tag='accuracy_curves', value=('test_acc', test_acc), global_step=epoch)
 
         # Training cost
-        sw.add_scalar(tag='cost_curves', value=(
-            'time', epoch_time), global_step=epoch)
-        sw.add_scalar(tag='cost_curves', value=(
-            'speed', speed), global_step=epoch)
+        sw.add_scalar(tag='cost_curves', value=('time', epoch_time), global_step=epoch)
+        sw.add_scalar(tag='cost_curves', value=('speed', speed), global_step=epoch)
 
         # Broken due to BatchNorm
         if False:
@@ -217,7 +207,6 @@ def train(train_iter, test_iter, net, loss, trainer, ctx, num_epochs, log_dir='.
         # net.export(file_name)
         # print('Network saved : %s' % (file_name))
 
-
 def save_params(net, best_map, current_map, epoch, save_interval, prefix):
     current_map = float(current_map)
     if current_map > best_map[0]:
@@ -249,7 +238,7 @@ def parse_args():
     parser.add_argument('--learning-rate', dest='learning_rate',
                         help='the learning rate of optimizer. (default: %(default)s)',
                         type=float,
-                        default=0.01)
+                        default=0.001)
 
     parser.add_argument('--lr-decay', dest='lr_decay', type=float, default=0.1,
                         help='decay rate of learning rate. default is 0.1.')
@@ -320,33 +309,8 @@ def parse_args():
 
     return parser.parse_args()
 
-if __name__ == '__main__ZZZ':
-    seed = 42
-
-    print('Loader test')
-    # /data/train
-    # image , mask
-    # the RGB label of images and the names of lables
-    COLORMAP = [[0, 0, 0], [255, 255, 255]]
-    CLASSES = ['background', 'label']
-
-    dataset = SegDataset('./data/nerve-dataset/train', transform = None, colormap=COLORMAP, classes=CLASSES)
-    loader = mx.gluon.data.DataLoader(dataset, 1, num_workers=1)
-    ctx = [mx.cpu()]
-
-    for i, batch in enumerate(loader):
-        features, labels = batch
-        feature = gutils.split_and_load(features, ctx, even_split=True)
-        label = gutils.split_and_load(labels, ctx, even_split=True)
-        print('idx = %s, batch_size = %s'  %(i, len(batch)))
-        # print(feature[0].shape)
-        # print(labels[0].shape)
-        # print(labels.shape)
-
-    print("Batch complete")
-
 if __name__ == '__main__':
-    seed = 42
+    # seed = 42
     # random.seed = seed
     # np.random.seed = seed
     # mx.random.seed(seed)
@@ -364,16 +328,18 @@ if __name__ == '__main__':
         os.environ['MXNET_CUDNN_AUTOTUNE_DEFAULT'] = '0'
         # os.environ['CUDA_VISIBLE_DEVICES'] = '0'
 
+    # epoch 200, loss 0.26075, train acc 0.88482, test acc 0.87221, time 1.15931 sec
+
     # Hyperparameters
     print(args)
     batch_size = args.batch_size
     num_workers = multiprocessing.cpu_count() // 2
     # python ./segmenter.py --checkpoint=load --checkpoint-file ./unet_best.params
-    net = UNet(channels=16, num_class=args.num_classes)
+    net = UNet(channels=64, num_class=args.num_classes)
     # Load checkpoint from file
     if args.checkpoint == 'new':
         print("Starting new training")
-        net.initialize(init=init.Xavier(magnitude=6), ctx=ctx)
+        net.initialize(init=init.Xavier(magnitude=2.4), ctx=ctx)
     elif args.checkpoint == 'load':
         print("Continuing training from checkpoint : %s" %
               (args.checkpoint_file))
@@ -385,9 +351,8 @@ if __name__ == '__main__':
     # print(net)
     # net.summary(nd.ones((1, 3, 512, 512)))  # NCHW (N:batch_size, C:channel, H:height, W:width)
 
-    if True:
-        sys.exit(1)
-
+    # if True:
+    #     sys.exit(1)
 
     train_dir = os.path.join(args.data_dir, 'train')
     test_dir = os.path.join(args.data_dir, 'test')
@@ -400,6 +365,7 @@ if __name__ == '__main__':
 
     loss = gloss.SoftmaxCrossEntropyLoss(axis=1)
 
+    # fixme : SGD causes a NAN during loss calculation
     if args.optimizer == 'sgd':
         optimizer_params = {
             'learning_rate': args.learning_rate, 'momentum': args.momentum}
@@ -409,3 +375,6 @@ if __name__ == '__main__':
     trainer = gluon.Trainer(net.collect_params(), args.optimizer, optimizer_params)
     train(train_iter, test_iter, net, loss, trainer, ctx, num_epochs=args.num_epochs, log_dir=args.log_dir)
     print('Done')
+
+    # Runs
+    # epoch 200, loss 0.13366, train acc 0.94256, test acc 0.91288, time 1.14260 sec

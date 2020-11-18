@@ -184,3 +184,9 @@ Unique parameters in model: 35916994
 --------------------------------------------------------------------------------
 
 ```
+
+
+
+## Notes
+
+https://towardsdatascience.com/counting-no-of-parameters-in-deep-learning-models-by-hand-8f1716241889
