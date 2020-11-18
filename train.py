@@ -386,7 +386,7 @@ if __name__ == '__main__':
     # net.summary(nd.ones((1, 3, 512, 512)))  # NCHW (N:batch_size, C:channel, H:height, W:width)
 
     if True:
-        os.exit(1)
+        sys.exit(1)
 
 
     train_dir = os.path.join(args.data_dir, 'train')
