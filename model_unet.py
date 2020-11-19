@@ -37,9 +37,8 @@ class BaseConvBlock(nn.HybridBlock):
         self.conv1 = nn.Conv2D(channels, kernel_size=3, padding=1)
         self.norm1 = norm_layer(regularization)
         self.conv2 = nn.Conv2D(channels, kernel_size=3, padding=1)
-        self.dropout = nn.Dropout(.5)
-
-        # self.norm2 = norm_layer(regularization)
+        self.norm2 = norm_layer(regularization)
+        # self.dropout = nn.Dropout(.15)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         # BatchNorm input will typically be unnormalized activations from the previous layer,
@@ -48,15 +47,15 @@ class BaseConvBlock(nn.HybridBlock):
 
         res = self.residual(x)
         x = self.conv1(x)
-        # x = self.norm1(x)
-        x = F.LeakyReLU(x)  
+        x = F.LeakyReLU(x) 
+        x = self.norm1(x)
         
         x = self.conv2(x)
-        x = self.norm1(x)
-        # x = self.norm2(x)  
+        x = self.norm2(x)
 
+        # Concatenate ResBlock
         connection = nd.add(res, x)
-        x = self.dropout(connection)
+        # x = self.dropout(connection)
         x = F.LeakyReLU(connection)
         
         return x
