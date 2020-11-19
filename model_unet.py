@@ -55,6 +55,7 @@ class BaseConvBlock(nn.HybridBlock):
 
         # Concatenate ResBlock
         connection = nd.add(res, x)
+        # x = nd.concat(x1, x2, dim=1)
         # x = self.dropout(connection)
         x = F.LeakyReLU(connection)
         
@@ -138,7 +139,7 @@ class UNet(nn.HybridSequential):
         super(UNet, self).__init__(**kwargs)
         self.regularization = regularization
         # Input 
-        self.input_conv = BaseConvBlock(channels, regularization)
+        self.input_conv = BaseConvBlock(1, regularization)
 
         # contracting path -> encoder        
         for i in range(4):
