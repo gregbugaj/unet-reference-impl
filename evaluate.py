@@ -161,7 +161,7 @@ def imwrite(path, img):
 if __name__ == '__main__':
     args = parse_args()
     args.network_param = './unet_best.params'
-    args.img_path = './data/nerve-dataset/validate/image/6.png'
+    args.img_path = './data/nerve-dataset/validate/image/2.png'
     args.debug = True
 
     ctx = [mx.cpu()]
