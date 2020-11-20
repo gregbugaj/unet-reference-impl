@@ -73,7 +73,7 @@ python ./evaluate.py --image=./input.png ----network-param./unet_best.params
 * Conv2DTranspose / UpSample
   * Added support to switche between `Conv2DTranspose` and `UpSampling` http://distill.pub/2016/deconv-checkerboard/
   
- ## Tensorboard
+## Tensorboard
 
  ```sh
  tensorboard --logdir ./logs

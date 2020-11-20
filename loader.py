@@ -4,6 +4,7 @@ from mxnet import image, nd
 import numpy as np
 import os
 import mxnet as mx
+import cv2
 
 class SegDataset(gdata.Dataset):
     def __init__(self, root, transform = None, colormap = None, classes=None):
@@ -48,8 +49,8 @@ class SegDataset(gdata.Dataset):
            self.__features[idx] = _feature
            self.__labels[idx] = _label
 
-           del self.features[idx]
-           del self.labels[idx]
+        #    del self.features[idx]
+        #    del self.labels[idx]
 
     def normalize_image(self, img):
         return (img.astype('float32') / 255.0 - self.rgb_mean) / self.rgb_std
@@ -84,8 +85,9 @@ class SegDataset(gdata.Dataset):
 
     def __getitem__(self, idx):
         # feature, label = self.features[idx], self.labels[idx]
-        # if self.transform is not None:
-        #     return self.transform(feature, label)
+        if self.transform is not None:
+            return self.transform(self.__features[idx], self.__labels[idx])
+
         return self.__features[idx], self.__labels[idx]
 
         if False:
@@ -99,6 +101,8 @@ class SegDataset(gdata.Dataset):
         
     def __len__(self):
         return len(self.features)
+
+
 
 if __name__ == '__main__':
     print('Loader test')
@@ -117,8 +121,12 @@ if __name__ == '__main__':
         feature = gutils.split_and_load(features, ctx, even_split=True)
         label = gutils.split_and_load(labels, ctx, even_split=True)
         print('idx = %s, batch_size = %s'  %(i, len(batch)))
-        # print(feature[0].shape)
-        # print(labels[0].shape)
+        print(feature[0].shape)
+        print(labels[0].shape)
         # print(labels.shape)
+        image_aug, mask_aug = augment_image(feature, label, count = 1)
+        cv2.imwrite('/tmp/imgaug/%s.png' %(i), image_aug)
+        cv2.imwrite('/tmp/imgaug/%s_mask.png' %(i), mask_aug)
 
+        
     print("Batch complete")
