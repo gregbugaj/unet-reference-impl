@@ -24,7 +24,7 @@ class BaseConvBlock(nn.HybridBlock):
         super(BaseConvBlock, self).__init__(**kwargs)
         def norm_layer(regularization):
             if regularization == 'batch_norm':            
-                return nn.BatchNorm()
+                return nn.BatchNorm(axis=1, center=True, scale=True)
             elif regularization == 'layer_norm':            
                 return nn.LayerNorm()  
             raise ValueError("Unknow regularization type : %s" %(regularization))
@@ -38,7 +38,7 @@ class BaseConvBlock(nn.HybridBlock):
         self.norm1 = norm_layer(regularization)
         self.conv2 = nn.Conv2D(channels, kernel_size=3, padding=1)
         self.norm2 = norm_layer(regularization)
-        # self.dropout = nn.Dropout(.15)
+        # self.dropout = nn.Dropout(.30)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         # BatchNorm input will typically be unnormalized activations from the previous layer,
@@ -48,16 +48,16 @@ class BaseConvBlock(nn.HybridBlock):
         res = self.residual(x)
         x = self.conv1(x)
         x = F.LeakyReLU(x) 
+        # x = nd.relu(x)
         x = self.norm1(x)
-        
         x = self.conv2(x)
         x = self.norm2(x)
-
         # Concatenate ResBlock
         connection = nd.add(res, x)
         # x = nd.concat(x1, x2, dim=1)
         # x = self.dropout(connection)
         x = F.LeakyReLU(connection)
+        # x = nd.relu(connection)
         
         return x
 
@@ -80,7 +80,11 @@ class UpsampleConvLayer(nn.HybridBlock):
         # sample_type= nearest |  bilinear
         # for bilinear
         # y1 = mx.nd.contrib.BilinearResize2D(x1, out_height=5, out_width=5)
-        x = F.UpSampling(x, scale=self.factor, sample_type='nearest')
+        h = x.shape[2] * 2
+        w = x.shape[3] * 2
+        x = nd.contrib.BilinearResize2D(x, height = h, width = w)
+
+        # x = F.UpSampling(x, scale=self.factor, sample_type='nearest')
         return self.conv2d(x)
 
 class DownSampleBlock(nn.HybridBlock):
@@ -135,11 +139,11 @@ class UpSampleBlock(nn.HybridSequential):
 
 
 class UNet(nn.HybridSequential):
-    def __init__(self, channels, num_class, regularization='layer_norm', **kwargs):
+    def __init__(self, channels, num_class, regularization='batch_norm', **kwargs):
         super(UNet, self).__init__(**kwargs)
         self.regularization = regularization
         # Input 
-        self.input_conv = BaseConvBlock(1, regularization)
+        self.input_conv = BaseConvBlock(channels, regularization)
 
         # contracting path -> encoder        
         for i in range(4):
