@@ -316,8 +316,8 @@ if __name__ == '__main__':
     # random.seed = seed
     # np.random.seed = seed
     # mx.random.seed(seed)
+        
     args = parse_args()
-
     if args.gpu_id is None:
         ctx = [mx.cpu()]
     else:
@@ -366,11 +366,13 @@ if __name__ == '__main__':
     train_iter =  mx.gluon.data.DataLoader(train_imgs, batch_size=batch_size, shuffle=True, num_workers=num_workers, last_batch='keep')
     test_iter =  mx.gluon.data.DataLoader(test_imgs, batch_size=batch_size, shuffle=True, num_workers=num_workers, last_batch='keep')
 
+    
+
     # Loss function test
     # loss = gloss.SoftmaxCrossEntropyLoss(axis=1)
     # Weight are calculated dynamatically
     loss = WeightedBCEDICE(axis = 1, weight = None)
-    # loss = FocalLoss(axis=1, num_class=2)
+    loss = FocalLoss(axis=1, num_class=2)
 
     # fixme : SGD causes a NAN during loss calculation
     if args.optimizer == 'sgd':

@@ -71,9 +71,26 @@ class FocalLoss(Loss):
             one_hot = F.one_hot(label, self._num_class)
         else:
             one_hot = label > 0
+
+        print("-----------------F-----------------")
+        print(type(F))
+
+        print("---------------one_hot-----------------")
+        print(one_hot.shape)
+        # print(one_hot)
+
+        print("---------------pred-----------------")
+        print(pred.shape)        
+        # print(pred)        
+        
         pt = F.where(one_hot, pred, 1 - pred)
         t = F.ones_like(one_hot)
         alpha = F.where(one_hot, self._alpha * t, (1 - self._alpha) * t)
+        
+        print("---------------T-----------------")
+        print(t)
+
+
         loss = -alpha * ((1 - pt) ** self._gamma) * F.log(F.minimum(pt + self._eps, 1))
         loss = _apply_weighting(F, loss, self._weight, sample_weight)
         if self._size_average:
