@@ -35,9 +35,9 @@ class BaseConvBlock(nn.HybridBlock):
         # no-padding in the paper
         # here, I use padding to get the output of the same shape as input
         self.conv1 = nn.Conv2D(channels, kernel_size=3, padding=1)
-        self.norm1 = norm_layer(regularization)
+        # self.norm1 = norm_layer(regularization)
         self.conv2 = nn.Conv2D(channels, kernel_size=3, padding=1)
-        self.norm2 = norm_layer(regularization)
+        # self.norm2 = norm_layer(regularization)
         # self.dropout = nn.Dropout(.15)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
@@ -48,10 +48,10 @@ class BaseConvBlock(nn.HybridBlock):
         res = self.residual(x)
         x = self.conv1(x)
         x = F.LeakyReLU(x) 
-        x = self.norm1(x)
+        # x = self.norm1(x)
         
         x = self.conv2(x)
-        x = self.norm2(x)
+        # x = self.norm2(x)
 
         # Concatenate ResBlock
         connection = nd.add(res, x)
@@ -139,7 +139,7 @@ class UNet(nn.HybridSequential):
         super(UNet, self).__init__(**kwargs)
         self.regularization = regularization
         # Input 
-        self.input_conv = BaseConvBlock(1, regularization)
+        self.input_conv = BaseConvBlock(channels, regularization)
 
         # contracting path -> encoder        
         for i in range(4):
