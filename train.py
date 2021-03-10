@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+from WeightedBCEDICELoss import WeightedBCEDICE
+from FocalLoss import FocalLoss
 import argparse
 import os
 from mxnet.gluon import loss as gloss, data as gdata, utils as gutils
@@ -364,7 +366,11 @@ if __name__ == '__main__':
     train_iter =  mx.gluon.data.DataLoader(train_imgs, batch_size=batch_size, shuffle=True, num_workers=num_workers, last_batch='keep')
     test_iter =  mx.gluon.data.DataLoader(test_imgs, batch_size=batch_size, shuffle=True, num_workers=num_workers, last_batch='keep')
 
-    loss = gloss.SoftmaxCrossEntropyLoss(axis=1)
+    # Loss function test
+    # loss = gloss.SoftmaxCrossEntropyLoss(axis=1)
+    # Weight are calculated dynamatically
+    loss = WeightedBCEDICE(axis = 1, weight = None)
+    # loss = FocalLoss(axis=1, num_class=2)
 
     # fixme : SGD causes a NAN during loss calculation
     if args.optimizer == 'sgd':

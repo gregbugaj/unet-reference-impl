@@ -53,15 +53,14 @@ class BaseConvBlock(nn.HybridBlock):
         # F is a function space that depends on the type of x
         # If x's type is NDArray, then F will be mxnet.nd
         # If x's type is Symbol, then F will be mxnet.sym
-        print('type(x): {}, F: {}'.format(
-                type(x).__name__, F.__name__))
-        print (self.infer_shape(x))
-                        
+        # print('type(x): {}, F: {}'.format(
+        #         type(x).__name__, F.__name__))
+
         res = self.residual(x)
         x = self.conv1(x)
         x = F.LeakyReLU(x) 
         # x = nd.relu(x)
-        x = self.norm1(x)
+        # x = self.norm1(x)
         x = self.conv2(x)
         x = self.norm2(x)
 
@@ -103,12 +102,11 @@ class UpsampleConvLayer(nn.HybridBlock):
 class DownSampleBlock(nn.HybridBlock):
     def __init__(self, channels, regularization, **kwargs):
         super(DownSampleBlock, self).__init__(**kwargs)    
-        print('channels-d: %s ' %(channels))
+        # print('channels-d: %s ' %(channels))
         self.channels = channels
         self.conv = BaseConvBlock(channels, regularization)
         self.maxPool = nn.MaxPool2D(pool_size=2, strides=2)    
         
-
     def hybrid_forward(self, F, x, *args, **kwargs):
         x = self.maxPool(x)
         x = self.conv(x)        
@@ -118,7 +116,7 @@ class DownSampleBlock(nn.HybridBlock):
 class UpSampleBlock(nn.HybridBlock):
     def __init__(self, channels, regularization, upmode, **kwargs):
         super(UpSampleBlock, self).__init__(**kwargs)
-        print('channels-u: %s ' %(channels))
+        # print('channels-u: %s ' %(channels))
         self.channels = channels
         if upmode == 'upconv':
             self.up = nn.Conv2DTranspose(channels, kernel_size=4, padding=1, strides=2)

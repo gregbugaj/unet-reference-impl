@@ -7,12 +7,13 @@ from model_unet import UNet
 from loader import SegDataset
 import cv2
 import matplotlib.pyplot as plt
-
+import os
 from mxnet.gluon import loss as gloss, data as gdata, utils as gutils
 import sys
 import time
 import numpy
 import argparse
+from tqdm import tqdm
 
 # numpy.set_printoptions(threshold=sys.maxsize)
 
@@ -55,6 +56,13 @@ def iou_metric(a, b, epsilon=1e-5, conversion_mode='cast', conversion_params={'p
     Returns:
         (float) The Intersect of Union score.
     """
+
+    if a is None or b is None:
+        raise ValueError("Expected param 'a' and 'b' to be not null")        
+
+    if type(a) is not numpy.ndarray or type(b) is not numpy.ndarray:
+        raise ValueError("Expected param 'a' and 'b' to be of type : numpy.ndarray")        
+
     if conversion_mode == 'cast':
         d1 = a.astype('bool')
         d2 = b.astype('bool')
@@ -100,7 +108,7 @@ def recognize(network_parameters, image_path, ctx, debug):
     net = UNet(channels = n_channels, num_class = n_classes)
     net.load_parameters(network_parameters, ctx=ctx)
     
-    # Srepare images
+    # Seperate images
     src = cv2.imread(image_path) 
     # ratio, resized_img = resize_and_frame(src, height=512)
     resized_img = src
@@ -158,7 +166,66 @@ def imwrite(path, img):
     except Exception as ident:
         print(ident)
 
+def read_images(root):
+    img_dir = os.path.join(root, 'image')
+    mask_dir = os.path.join(root, 'mask')
+    mask_filenames = os.listdir(mask_dir)
+    img_filenames = os.listdir(img_dir) 
+
+    if len(img_filenames) != len(mask_filenames):
+        raise Exception('Wrong size')
+
+    features, labels = [None] * len(img_filenames), [None] * len(mask_filenames)
+    for i, fname in enumerate(img_filenames):
+        features[i] = cv2.imread(os.path.join(img_dir, fname))
+        labels[i] = cv2.imread(os.path.join(mask_dir, fname))
+
+    return img_filenames, features, labels
+
+
 if __name__ == '__main__':
+
+    network_param = './unet_best.params'
+    ctx = [mx.cpu()]
+
+    img_filenames, features, labels = read_images('./data/nerve-dataset/validate')
+    for i, batch in enumerate(tqdm(features)):
+        filename = img_filenames[i]
+        src_a = features[i]
+        label = labels[i]
+        img_path = './data/nerve-dataset/validate/image/{}'.format(filename)
+        src, mask = recognize(network_param, img_path, ctx, False)
+        #  expand shape from 1 channel to 3 channel
+        mask = mask[:, :, None] * np.ones(3, dtype=int)[None, None, :]
+        prediction = np.ones((mask.shape[0], mask.shape[1], 3), dtype = np.uint8) * 255
+        prediction[:, :] = mask
+
+        # print("label : {}".format(label.shape))
+        # print("mask : {}".format(mask.shape))
+        # print("prediction : {}".format(prediction.shape))
+
+        # showAndDestroy("label", label)
+        # showAndDestroy("prediction", prediction)
+
+        metric = iou_metric(a = label, b = prediction, epsilon=1e-5, conversion_mode='predicate', conversion_params={'p1' : 1.0, 'p2' : 1.0})
+        print('{} : {} : {}'.format(i,filename, metric))
+        
+        name = img_path.split('/')[-1]
+        imwrite('/tmp/debug/%s_src.tif' % (name), src)
+        imwrite('/tmp/debug/%s_prediction.tif' % (name), prediction)
+        imwrite('/tmp/debug/%s_label.tif' % (name), label)
+        # break
+
+
+if __name__ == '__main__XX':
+    # iou_metric
+    # Seperate images
+    src_a = cv2.imread('./data/nerve-dataset/validate/mask/2.png') 
+    src_b = cv2.imread('/tmp/debug/2.png_mask.tif') 
+
+    metric = iou_metric(a = src_a, b=src_a, epsilon=1e-5, conversion_mode='predicate', conversion_params={'p1' : 1.0, 'p2' : 1.0})
+    print(metric)
+    os.exit(1)
     args = parse_args()
     args.network_param = './unet_best.params'
     args.img_path = './data/nerve-dataset/validate/image/2.png'
@@ -170,3 +237,11 @@ if __name__ == '__main__':
 
     imwrite('/tmp/debug/%s_src.tif' % (name), src)
     imwrite('/tmp/debug/%s_mask.tif' % (name), mask )
+
+
+    
+    
+
+
+
+    
