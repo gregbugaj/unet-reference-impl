@@ -12,16 +12,21 @@
 # ResBlock
 # https://medium.com/ai%C2%B3-theory-practice-business/resblock-a-trick-to-impove-the-model-8ba11891c52a
 
-from mxnet.gluon import nn, loss as gloss, data as gdata
-from mxnet import autograd, nd, init, image
+# Hybridization issue
+# https://github.com/apache/incubator-mxnet/issues/9288
+
+from mxnet.gluon import nn
+from mxnet import nd
 import numpy as np
 
 # import logging
-# logging.basicConfig(level=# logging.CRITICAL)
+# logging.basicConfig(level=logging.CRITICAL)
 
 class BaseConvBlock(nn.HybridBlock):
     def __init__(self, channels, regularization, **kwargs):
         super(BaseConvBlock, self).__init__(**kwargs)
+        self.layer_shape = None
+
         def norm_layer(regularization):
             if regularization == 'batch_norm':            
                 return nn.BatchNorm(axis=1, center=True, scale=True)
@@ -45,6 +50,13 @@ class BaseConvBlock(nn.HybridBlock):
         # and the output will be the normalized activations ready for the next layer.
         # https://www.reddit.com/r/MachineLearning/comments/67gonq/d_batch_normalization_before_or_after_relu/
 
+        # F is a function space that depends on the type of x
+        # If x's type is NDArray, then F will be mxnet.nd
+        # If x's type is Symbol, then F will be mxnet.sym
+        print('type(x): {}, F: {}'.format(
+                type(x).__name__, F.__name__))
+        print (self.infer_shape(x))
+                        
         res = self.residual(x)
         x = self.conv1(x)
         x = F.LeakyReLU(x) 
@@ -102,7 +114,7 @@ class DownSampleBlock(nn.HybridBlock):
         # logging.info(x.shape)
         return x
 
-class UpSampleBlock(nn.HybridSequential):
+class UpSampleBlock(nn.HybridBlock):
     def __init__(self, channels, regularization, upmode, **kwargs):
         super(UpSampleBlock, self).__init__(**kwargs)
         print('channels-u: %s ' %(channels))
