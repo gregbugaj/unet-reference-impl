@@ -12,19 +12,24 @@
 # ResBlock
 # https://medium.com/ai%C2%B3-theory-practice-business/resblock-a-trick-to-impove-the-model-8ba11891c52a
 
-from mxnet.gluon import nn, loss as gloss, data as gdata
-from mxnet import autograd, nd, init, image
+# Hybridization issue
+# https://github.com/apache/incubator-mxnet/issues/9288
+
+from mxnet.gluon import nn
+from mxnet import nd
 import numpy as np
 
 # import logging
-# logging.basicConfig(level=# logging.CRITICAL)
+# logging.basicConfig(level=logging.CRITICAL)
 
 class BaseConvBlock(nn.HybridBlock):
     def __init__(self, channels, regularization, **kwargs):
         super(BaseConvBlock, self).__init__(**kwargs)
+        self.layer_shape = None
+
         def norm_layer(regularization):
             if regularization == 'batch_norm':            
-                return nn.BatchNorm()
+                return nn.BatchNorm(axis=1, center=True, scale=True)
             elif regularization == 'layer_norm':            
                 return nn.LayerNorm()  
             raise ValueError("Unknow regularization type : %s" %(regularization))
@@ -37,27 +42,35 @@ class BaseConvBlock(nn.HybridBlock):
         self.conv1 = nn.Conv2D(channels, kernel_size=3, padding=1)
         # self.norm1 = norm_layer(regularization)
         self.conv2 = nn.Conv2D(channels, kernel_size=3, padding=1)
-        # self.norm2 = norm_layer(regularization)
-        # self.dropout = nn.Dropout(.15)
+        self.norm2 = norm_layer(regularization)
+        # self.dropout = nn.Dropout(.30)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         # BatchNorm input will typically be unnormalized activations from the previous layer,
         # and the output will be the normalized activations ready for the next layer.
         # https://www.reddit.com/r/MachineLearning/comments/67gonq/d_batch_normalization_before_or_after_relu/
 
+        # F is a function space that depends on the type of x
+        # If x's type is NDArray, then F will be mxnet.nd
+        # If x's type is Symbol, then F will be mxnet.sym
+        print('type(x): {}, F: {}'.format(
+                type(x).__name__, F.__name__))
+        print (self.infer_shape(x))
+                        
         res = self.residual(x)
         x = self.conv1(x)
         x = F.LeakyReLU(x) 
-        # x = self.norm1(x)
-        
+        # x = nd.relu(x)
+        x = self.norm1(x)
         x = self.conv2(x)
-        # x = self.norm2(x)
+        x = self.norm2(x)
 
         # Concatenate ResBlock
         connection = nd.add(res, x)
         # x = nd.concat(x1, x2, dim=1)
         # x = self.dropout(connection)
         x = F.LeakyReLU(connection)
+        # x = nd.relu(connection)
         
         return x
 
@@ -80,7 +93,11 @@ class UpsampleConvLayer(nn.HybridBlock):
         # sample_type= nearest |  bilinear
         # for bilinear
         # y1 = mx.nd.contrib.BilinearResize2D(x1, out_height=5, out_width=5)
-        x = F.UpSampling(x, scale=self.factor, sample_type='nearest')
+        h = x.shape[2] * 2
+        w = x.shape[3] * 2
+        x = nd.contrib.BilinearResize2D(x, height = h, width = w)
+
+        # x = F.UpSampling(x, scale=self.factor, sample_type='nearest')
         return self.conv2d(x)
 
 class DownSampleBlock(nn.HybridBlock):
@@ -98,7 +115,7 @@ class DownSampleBlock(nn.HybridBlock):
         # logging.info(x.shape)
         return x
 
-class UpSampleBlock(nn.HybridSequential):
+class UpSampleBlock(nn.HybridBlock):
     def __init__(self, channels, regularization, upmode, **kwargs):
         super(UpSampleBlock, self).__init__(**kwargs)
         print('channels-u: %s ' %(channels))
@@ -135,7 +152,7 @@ class UpSampleBlock(nn.HybridSequential):
 
 
 class UNet(nn.HybridSequential):
-    def __init__(self, channels, num_class, regularization='layer_norm', **kwargs):
+    def __init__(self, channels, num_class, regularization='batch_norm', **kwargs):
         super(UNet, self).__init__(**kwargs)
         self.regularization = regularization
         # Input 

@@ -345,11 +345,12 @@ if __name__ == '__main__':
               (args.checkpoint_file))
         net.load_parameters(args.checkpoint_file, ctx=ctx)
 
-    # https://mxnet.apache.org/versions/1.6/api/python/docs/tutorials/packages/gluon/blocks/hybridize.html
-    # net.hybridize() # Causes errror with the SHAPE
-    # net.initialize(ctx=ctx)
+      # net.initialize(ctx=ctx)
     print(net)
     # net.summary(nd.ones((1, 3, 512, 512)))  # NCHW (N:batch_size, C:channel, H:height, W:width)
+
+    # https://mxnet.apache.org/versions/1.6/api/python/docs/tutorials/packages/gluon/blocks/hybridize.html
+    # net.hybridize() # Causes errror with the SHAPE
 
     # if True:
     #     sys.exit(1)
