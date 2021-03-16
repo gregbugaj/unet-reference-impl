@@ -16,19 +16,19 @@ import argparse
 from tqdm import tqdm
 
 # numpy.set_printoptions(threshold=sys.maxsize)
+os.environ["MXNET_CUDNN_AUTOTUNE_DEFAULT"] = "0"
 
-def normalize_image(img):
+def normalize_image(img, ctx):
     """normalize image for bitonal processing"""
-    # rgb_mean = nd.array([0.94040672, 0.94040672, 0.94040672])
-    # rgb_std = nd.array([0.14480773, 0.14480773, 0.14480773])
-    # second augmented set
-    
+
+    print(isinstance(ctx, list))
+    if isinstance(ctx, list) :
+        raise Exception('Context should not be an collection')
+        
     # rgb_mean = nd.array([0.93610591, 0.93610591, 0.93610591])
     # rgb_std = nd.array([0.1319155, 0.1319155, 0.1319155])
-
-    rgb_mean = nd.array([0.49118961, 0.49118961, 0.49118961])
-    rgb_std = nd.array([0.16585051, 0.16585051, 0.16585051])
-    
+    rgb_mean = nd.array([0.49118961, 0.49118961, 0.49118961], ctx = ctx)
+    rgb_std = nd.array([0.16585051, 0.16585051, 0.16585051], ctx = ctx)        
     return (img.astype('float32') / 255.0 - rgb_mean) / rgb_std
 
 def post_process_mask(pred, img_cols, img_rows, n_classes, p=0.5):
@@ -107,13 +107,13 @@ def recognize(network_parameters, image_path, ctx, debug):
     # Setup network
     net = UNet(channels = n_channels, num_class = n_classes)
     net.load_parameters(network_parameters, ctx=ctx)
-    
+
     # Seperate images
     src = cv2.imread(image_path) 
     # ratio, resized_img = resize_and_frame(src, height=512)
     resized_img = src
-    img = mx.nd.array(resized_img)    
-    normal = normalize_image(img)
+    img = mx.nd.array(resized_img, ctx = ctx[0])        
+    normal = normalize_image(img, ctx = ctx[0])
     name = image_path.split('/')[-1]
 
     if debug:
@@ -129,7 +129,7 @@ def recognize(network_parameters, image_path, ctx, debug):
     # Transform into required BxCxHxW shape
     data = np.transpose(normal, (2, 0, 1))
     # Exand shape into (B x H x W x c)
-    data = data.astype('float32')
+    data = data.astype('float32')    
     data = mx.ndarray.expand_dims(data, axis=0)
     # prediction 
     out = net(data)
@@ -186,7 +186,7 @@ def read_images(root):
 if __name__ == '__main__':
 
     network_param = './unet_best.params'
-    ctx = [mx.cpu()]
+    ctx = [mx.gpu()]
 
     img_filenames, features, labels = read_images('./data/nerve-dataset/validate')
     for i, batch in enumerate(tqdm(features)):
