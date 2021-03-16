@@ -20,8 +20,6 @@ os.environ["MXNET_CUDNN_AUTOTUNE_DEFAULT"] = "0"
 
 def normalize_image(img, ctx):
     """normalize image for bitonal processing"""
-
-    print(isinstance(ctx, list))
     if isinstance(ctx, list) :
         raise Exception('Context should not be an collection')
         
@@ -187,6 +185,7 @@ if __name__ == '__main__':
 
     network_param = './unet_best.params'
     ctx = [mx.gpu()]
+    ctx = [mx.cpu()]
 
     img_filenames, features, labels = read_images('./data/nerve-dataset/validate')
     for i, batch in enumerate(tqdm(features)):

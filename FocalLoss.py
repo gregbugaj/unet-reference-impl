@@ -1,4 +1,6 @@
 
+# FocalLoss info
+# https://gluon.mxnet.io/chapter08_computer-vision/object-detection.html
 # https://github.com/dmlc/gluon-cv/blob/master/gluoncv/loss.py
 
 from mxnet import gluon
