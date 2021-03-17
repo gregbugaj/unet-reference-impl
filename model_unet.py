@@ -20,30 +20,27 @@ from mxnet import nd
 import numpy as np
 
 # import logging
-# logging.basicConfig(level=logging.CRITICAL)
+# logging.basicConfig(level=# logging.CRITICAL)
 
 class BaseConvBlock(nn.HybridBlock):
-    def __init__(self, channels, regularization, **kwargs):
+    def __init__(self, channels, normalization, **kwargs):
         super(BaseConvBlock, self).__init__(**kwargs)
-        self.layer_shape = None
-
-        def norm_layer(regularization):
-            if regularization == 'batch_norm':            
+        def norm_layer(normalization):
+            if normalization == 'batch_norm':            
                 return nn.BatchNorm(axis=1, center=True, scale=True)
-            elif regularization == 'layer_norm':            
+            elif normalization == 'layer_norm':            
                 return nn.LayerNorm()  
-            raise ValueError("Unknow regularization type : %s" %(regularization))
+            elif normalization == 'none':            
+                return None
+            raise ValueError("Unknow normalization type : %s" %(normalization))
 
         # Residual/Skip connection (ResBlock)
         self.residual = nn.Conv2D(channels, kernel_size=1, padding=0) # Identity
 
-        # no-padding in the paper
-        # here, I use padding to get the output of the same shape as input
         self.conv1 = nn.Conv2D(channels, kernel_size=3, padding=1)
-        # self.norm1 = norm_layer(regularization)
+        self.norm1 = norm_layer(normalization)
         self.conv2 = nn.Conv2D(channels, kernel_size=3, padding=1)
-        self.norm2 = norm_layer(regularization)
-        # self.dropout = nn.Dropout(.30)
+        # self.norm2 = norm_layer(regularization)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
         # BatchNorm input will typically be unnormalized activations from the previous layer,
@@ -58,18 +55,17 @@ class BaseConvBlock(nn.HybridBlock):
 
         res = self.residual(x)
         x = self.conv1(x)
-        x = F.LeakyReLU(x) 
-        # x = nd.relu(x)
-        # x = self.norm1(x)
+        # x = F.LeakyReLU(x) 
+        x = nd.relu(x)
+        if self.norm1 != None:
+            x = self.norm1(x)
         x = self.conv2(x)
-        x = self.norm2(x)
-
+        # x = self.norm2(x)
         # Concatenate ResBlock
-        connection = nd.add(res, x)
-        # x = nd.concat(x1, x2, dim=1)
-        # x = self.dropout(connection)
-        x = F.LeakyReLU(connection)
-        # x = nd.relu(connection)
+        # connection = nd.add(res, x)
+        connection = nd.concat(res, x, dim=1)
+        # x = F.LeakyReLU(connection)
+        x = nd.relu(connection)
         
         return x
 
@@ -95,37 +91,37 @@ class UpsampleConvLayer(nn.HybridBlock):
         h = x.shape[2] * 2
         w = x.shape[3] * 2
         x = nd.contrib.BilinearResize2D(x, height = h, width = w)
-
         # x = F.UpSampling(x, scale=self.factor, sample_type='nearest')
         return self.conv2d(x)
-
 class DownSampleBlock(nn.HybridBlock):
-    def __init__(self, channels, regularization, **kwargs):
+    def __init__(self, channels, normalization, **kwargs):
         super(DownSampleBlock, self).__init__(**kwargs)    
-        # print('channels-d: %s ' %(channels))
+        print('channels-d: %s ' %(channels))
         self.channels = channels
-        self.conv = BaseConvBlock(channels, regularization)
+        self.conv = BaseConvBlock(channels, normalization)
         self.maxPool = nn.MaxPool2D(pool_size=2, strides=2)    
-        
+        self.dropout = nn.Dropout(.3)
+
     def hybrid_forward(self, F, x, *args, **kwargs):
         x = self.maxPool(x)
-        x = self.conv(x)        
+        x = self.conv(x)       
+        x = self.dropout(x)
         # logging.info(x.shape)
         return x
 
 class UpSampleBlock(nn.HybridBlock):
-    def __init__(self, channels, regularization, upmode, **kwargs):
+    def __init__(self, channels, normalization, upmode, **kwargs):
         super(UpSampleBlock, self).__init__(**kwargs)
-        # print('channels-u: %s ' %(channels))
+        print('channels-u: %s ' %(channels))
         self.channels = channels
         if upmode == 'upconv':
             self.up = nn.Conv2DTranspose(channels, kernel_size=4, padding=1, strides=2)
         elif upmode == 'upsample':
             self.up = UpsampleConvLayer(channels, kernel_size=3, stride=1, factor=2)
         else: 
-            raise ValueError("Unknow regularization type : %s" %(regularization))
+            raise ValueError("Unknown conversion type : %s" %(upmode))
 
-        self.conv = BaseConvBlock(channels, regularization)
+        self.conv = BaseConvBlock(channels, normalization)
 
     def hybrid_forward(self, F, x1, *args, **kwargs):
         x2 = args[0]
@@ -148,9 +144,8 @@ class UpSampleBlock(nn.HybridBlock):
         # logging.info(x.shape)
         return self.conv(x)
 
-
 class UNet(nn.HybridSequential):
-    def __init__(self, channels, num_class, regularization='batch_norm', **kwargs):
+    def __init__(self, channels, num_class, regularization='layer_norm', **kwargs):
         super(UNet, self).__init__(**kwargs)
         self.regularization = regularization
         # Input 
