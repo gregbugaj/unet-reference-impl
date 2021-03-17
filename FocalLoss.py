@@ -1,4 +1,6 @@
 
+# FocalLoss info
+# https://gluon.mxnet.io/chapter08_computer-vision/object-detection.html
 # https://github.com/dmlc/gluon-cv/blob/master/gluoncv/loss.py
 
 from mxnet import gluon
@@ -63,7 +65,16 @@ class FocalLoss(Loss):
         self._eps = eps
         self._size_average = size_average
 
-    def hybrid_forward(self, F, pred, label, sample_weight=None):
+
+    def hybrid_forward(self, F, output, label):
+        output = F.softmax(output)
+        pt = F.pick(output, label, axis=self._axis, keepdims=True)
+        # loss = -self._alpha * ((1 - pt) ** self._gamma) * F.log(pt)
+        loss = -self._alpha * ((1 - pt) ** self._gamma) * F.log(F.minimum(pt + self._eps, 1))
+
+        return F.mean(loss, axis=self._batch_axis, exclude=True)
+
+    def hybrid_forwardXXXX(self, F, pred, label, sample_weight=None):
         """Loss forward"""
         if not self._from_logits:
             pred = F.sigmoid(pred)
