@@ -1,6 +1,13 @@
 # U-NET reference implementation in MXNET
 
 Reference implementation of [U-Net: Convolutional Networks for Biomedical Image Segmentation](https://arxiv.org/abs/1505.04597)
+## Using a Python VirtualEnv environment with VSCode
+
+Create a symbolic link to a `env` folder in the root of the project that point to your MXNET VirtualEnv
+
+```sh
+   ln -s  ~/environments/mxnet1.7/ ~/dev/unet-reference-impl/env
+```
 
 ## Dataset
 
