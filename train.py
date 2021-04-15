@@ -365,7 +365,8 @@ if __name__ == '__main__':
     batch_size = args.batch_size
     num_workers = multiprocessing.cpu_count() // 2
     # python ./segmenter.py --checkpoint=load --checkpoint-file ./unet_best.params
-    net = UNet(channels=8, num_class=args.num_classes)
+    net = UNet(channels=64, num_class=args.num_classes)
+
     # Load checkpoint from file
     if args.checkpoint == 'new':
         print("Starting new training")
@@ -397,8 +398,9 @@ if __name__ == '__main__':
     # Loss function test
     # loss = gloss.SoftmaxCrossEntropyLoss(axis=1)
     # Weight are calculated dynamatically
-    loss = WeightedBCEDICE(axis = 1, weight = None)
-    # loss = FocalLoss(axis=1, num_class=2)
+    
+    # loss = WeightedBCEDICE(axis = 1, weight = None)
+    loss = FocalLoss(axis=1, num_class=2)
 
     # fixme : SGD causes a NAN during loss calculation
     if args.optimizer == 'sgd':
@@ -410,6 +412,3 @@ if __name__ == '__main__':
     trainer = gluon.Trainer(net.collect_params(), args.optimizer, optimizer_params)
     train(train_iter, test_iter, net, loss, trainer, ctx, num_epochs=args.num_epochs, log_dir=args.log_dir)
     print('Done')
-
-    # Runs
-    # epoch 200, loss 0.13366, train acc 0.94256, test acc 0.91288, time 1.14260 sec

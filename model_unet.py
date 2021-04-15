@@ -22,6 +22,23 @@ import numpy as np
 # import logging
 # logging.basicConfig(level=# logging.CRITICAL)
 
+class AttentionConvBlock(nn.HybridBlock):
+    def __init__(self, F_g, F_1, F_int, **kwargs):
+        super(AttentionConvBlock, self).__init__(**kwargs)
+        # channels (int) – The dimensionality of the output space,
+        # in_channels (int, default 0) – The number of input channels to this layer. 
+        # If not specified, initialization will be deferred to the first time forward is called and in_channels will be inferred from the shape of input data.
+
+        #  torch.nn. Conv2d (in_channels, out_channels,
+        self.W_g = nn.HybridSequential (
+            nn.Conv2D(channels = F_g, kernel_size= 1, stride = 1, padding = 0),
+            nn.BatchNorm(axis=1, center=True, scale=True)
+        )
+         
+    def hybrid_forward(self, F, x, *args, **kwargs):
+
+        return x
+
 class BaseConvBlock(nn.HybridBlock):
     def __init__(self, channels, normalization, **kwargs):
         super(BaseConvBlock, self).__init__(**kwargs)
@@ -55,7 +72,7 @@ class BaseConvBlock(nn.HybridBlock):
 
         res = self.residual(x)
         x = self.conv1(x)
-        # x = F.LeakyReLU(x) 
+        # x = F.LeakyReLU(x)  # need more juice on local dev machine 
         x = nd.relu(x)
         if self.norm1 != None:
             x = self.norm1(x)
@@ -64,6 +81,7 @@ class BaseConvBlock(nn.HybridBlock):
         # Concatenate ResBlock
         # connection = nd.add(res, x)
         connection = nd.concat(res, x, dim=1)
+
         # x = F.LeakyReLU(connection)
         x = nd.relu(connection)
         
@@ -100,12 +118,13 @@ class DownSampleBlock(nn.HybridBlock):
         self.channels = channels
         self.conv = BaseConvBlock(channels, normalization)
         self.maxPool = nn.MaxPool2D(pool_size=2, strides=2)    
-        self.dropout = nn.Dropout(.3)
+        # self.dropout = nn.Dropout(.3)
 
     def hybrid_forward(self, F, x, *args, **kwargs):
-        x = self.maxPool(x)
+        # This order was wrong here
         x = self.conv(x)       
-        x = self.dropout(x)
+        x = self.maxPool(x)
+        # x = self.dropout(x)
         # logging.info(x.shape)
         return x
 

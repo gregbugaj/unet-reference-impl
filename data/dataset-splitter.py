@@ -27,6 +27,19 @@ def split(src_mulitpage_tif, target_dir):
     for idx, frame in enumerate(frames):
         target = os.path.join(target_dir, "%s.png" %(idx))
         print(target)
+
+        img = frame
+        print('Original Dimensions : ',img.shape)
+        scale_percent = 75 # percent of original size
+        width = int(img.shape[1] * scale_percent / 100)
+        height = int(img.shape[0] * scale_percent / 100)
+        dim = (width, height)
+        
+        # resize image
+        resized = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
+        frame = resized
+        
+        print('Resized Dimensions : ',resized.shape)
         imwrite(target, frame)
 
     # filename = str(uuid.uuid4())

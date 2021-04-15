@@ -99,8 +99,8 @@ def recognize(network_parameters, image_path, ctx, debug):
     # At one point this can be generalized but right now I don't see this changing 
     n_classes = 2
     n_channels = 64
-    img_width = 512
-    img_height = 512
+    img_width = 384 # 512
+    img_height = 384 # 512
 
     # Setup network
     net = UNet(channels = n_channels, num_class = n_classes)
