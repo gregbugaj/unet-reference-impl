@@ -57,7 +57,7 @@ class WeightedBCEDICE(Loss):
         self._axis = axis
         self._sparse_label = sparse_label
         self._from_logits = from_logits
-        self._pool = nn.AvgPool2D(pool_size=(21, 21), strides = (1, 1), padding=0)
+        self._pool = nn.AvgPool2D(pool_size=(11, 11), strides = (1, 1), padding=0)
 
     def weighted_dice_coeff(self, F, pred, label, weight):
         smooth = 1.
@@ -128,5 +128,5 @@ class WeightedBCEDICE(Loss):
         loss = _apply_weighting(F, loss, self._weight, sample_weight)
         # diceloss = self.dice_loss(F, pred, label)
         diceloss = self.weighted_dice_loss(F, pred, label, self._weight)
-        return F.mean(loss, axis=self._batch_axis, exclude=True) + diceloss
-        # return F.sum(loss, axis=self._batch_axis, exclude=True) + diceloss
+        # return F.mean(loss, axis=self._batch_axis, exclude=True) + diceloss
+        return F.sum(loss, axis=self._batch_axis, exclude=True) + diceloss

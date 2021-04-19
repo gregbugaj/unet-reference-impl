@@ -28,6 +28,7 @@ import matplotlib.pyplot as plt
 
 from collections import namedtuple
 from mxboard import *
+from tqdm import tqdm
 
 # module
 from loader import SegDataset
@@ -136,7 +137,7 @@ def train(train_iter, test_iter, net, loss, trainer, ctx, num_epochs, log_dir='.
         btic = time.time()
         metric.reset()
 
-        for i, batch in enumerate(train_iter):
+        for i, batch in enumerate(tqdm(train_iter)):
             # if i % 0 == 0:
             print("Batch Index : %d" % (i))
             # get data and their associated labels
@@ -399,8 +400,8 @@ if __name__ == '__main__':
     # loss = gloss.SoftmaxCrossEntropyLoss(axis=1)
     # Weight are calculated dynamatically
     
-    # loss = WeightedBCEDICE(axis = 1, weight = None)
-    loss = FocalLoss(axis=1, num_class=2)
+    loss = WeightedBCEDICE(axis = 1, weight = None)
+    # loss = FocalLoss(axis=1, num_class=2)
 
     # fixme : SGD causes a NAN during loss calculation
     if args.optimizer == 'sgd':
