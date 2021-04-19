@@ -67,8 +67,9 @@ class FocalLoss(Loss):
 
 
     def hybrid_forward(self, F, output, label):
+        # This uses softmax 
         output = F.softmax(output, axis=self._axis)
-        pt = F.pick(output, label, axis=self._axis, keepdims=True)
+        pt = F.pick(output, label, axis=self._axis, keepdims=True) # probability of ground truth label
         # loss = -self._alpha * ((1 - pt) ** self._gamma) * F.log(pt)
         loss = -self._alpha * ((1 - pt) ** self._gamma) * F.log(F.minimum(pt + self._eps, 1))
 
