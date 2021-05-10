@@ -401,7 +401,7 @@ if __name__ == '__main__':
     # Weight are calculated dynamatically
     
     loss = WeightedBCEDICE(axis = 1, weight = None)
-    loss = FocalLoss(axis=1, num_class=2)
+    # loss = FocalLoss(axis=1, num_class=2)
 
     # fixme : SGD causes a NAN during loss calculation
     if args.optimizer == 'sgd':

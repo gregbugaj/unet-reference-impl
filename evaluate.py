@@ -99,8 +99,8 @@ def recognize(network_parameters, image_path, ctx, debug):
     # At one point this can be generalized but right now I don't see this changing 
     n_classes = 2
     n_channels = 64
-    img_width = 384 # 512
-    img_height = 384 # 512
+    img_width = 512 # 384
+    img_height = 512 # 384 
 
     # Setup network
     net = UNet(channels = n_channels, num_class = n_classes)
@@ -210,9 +210,9 @@ if __name__ == '__main__':
         print('{} : {} : {}'.format(i,filename, metric))
         
         name = img_path.split('/')[-1]
-        imwrite('/tmp/debug/%s_src.tif' % (name), src)
-        imwrite('/tmp/debug/%s_prediction.tif' % (name), prediction)
-        imwrite('/tmp/debug/%s_label.tif' % (name), label)
+        imwrite('./debug/%s_src.tif' % (name), src)
+        imwrite('./debug/%s_prediction.tif' % (name), prediction)
+        imwrite('./debug/%s_label.tif' % (name), label)
         # break
 
 

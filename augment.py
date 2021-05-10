@@ -67,7 +67,8 @@ def augment_image(img, mask, count=1):
         #     pad_cval=(150, 200)
         # )
 
-        iaa.Fliplr(0.5)
+        iaa.Fliplr(.5),
+        iaa.Flipud(.5)
     ])
 
     seq = iaa.Sequential([
@@ -89,8 +90,9 @@ def augment_image(img, mask, count=1):
     
     for i in range(count):
         seq_shared_det = seq_shared.to_deterministic()
-        image_aug = seq(image = img)
-        image_aug = seq_shared_det(image = image_aug)
+        # image_aug = seq(image = img)
+
+        image_aug = seq_shared_det(image = img)
         mask_aug = seq_shared_det(image = mask)
 
         masks.append(mask_aug)
@@ -115,14 +117,13 @@ def augment(dir_src, dir_dest):
     ensure_exists(os.path.join(dir_dest, 'image'))
     ensure_exists(os.path.join(dir_dest, 'mask'))
 
-
     for i, filename in enumerate(filenames):
         try:
             print (filename)
             img = cv2.imread(os.path.join(img_dir, filename)) 
             mask = cv2.imread(os.path.join(mask_dir, filename)) 
             # Apply transformations to the image
-            aug_images, aug_masks = augment_image(img, mask, 10)
+            aug_images, aug_masks = augment_image(img, mask, 3)
 
             # Add originals
             aug_images.append(img)
@@ -150,3 +151,4 @@ def augment(dir_src, dir_dest):
 if __name__ == '__main__':
     # mean_('./data/nerve-dataset/train/image')
     augment('./data/nerve-dataset/train', './data/nerve-dataset-augmented/train')
+    augment('./data/nerve-dataset/test', './data/nerve-dataset-augmented/test')
