@@ -284,7 +284,7 @@ def parse_args():
                         dest='batch_size',
                         help='the batch size of model. (default: %(default)s)',
                         type=int,
-                        default=2)
+                        default=1)
     parser.add_argument('--num-epochs', 
                         dest='num_epochs',
                         help='the number of epochs to train model. (defalult: %(default)s)',
@@ -366,7 +366,7 @@ if __name__ == '__main__':
     batch_size = args.batch_size
     num_workers = multiprocessing.cpu_count() // 2
     # python ./segmenter.py --checkpoint=load --checkpoint-file ./unet_best.params
-    net = UNet(channels=64, num_class=args.num_classes)
+    net = UNet(in_channels=3, num_class=args.num_classes)
 
     # Load checkpoint from file
     if args.checkpoint == 'new':
@@ -387,6 +387,7 @@ if __name__ == '__main__':
     # if True:
     #     sys.exit(1)
 
+    args.data_dir = './data/nerve-dataset'
     train_dir = os.path.join(args.data_dir, 'train')
     test_dir = os.path.join(args.data_dir, 'test')
 
@@ -409,6 +410,8 @@ if __name__ == '__main__':
             'learning_rate': args.learning_rate, 'momentum': args.momentum}
     else:
         optimizer_params = {'learning_rate': args.learning_rate}
+
+    # sys.exit(1)
 
     trainer = gluon.Trainer(net.collect_params(), args.optimizer, optimizer_params)
     train(train_iter, test_iter, net, loss, trainer, ctx, num_epochs=args.num_epochs, log_dir=args.log_dir)
