@@ -22,7 +22,6 @@ import logging
 
 logging.basicConfig(level=logging.CRITICAL)
 
-
 class AttentionConvBlock(nn.HybridBlock):
     def __init__(self, F_g, F_l, F_int, **kwargs):
         super(AttentionConvBlock, self).__init__(**kwargs)
@@ -57,7 +56,6 @@ class AttentionConvBlock(nn.HybridBlock):
         psi = self.psi(psi)
         out = x * psi
         return out
-
 
 class UpsampleConvLayer(nn.HybridBlock):
     """UpsampleConvLayer
