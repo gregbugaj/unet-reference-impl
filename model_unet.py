@@ -142,25 +142,21 @@ class BaseConvBlock(nn.HybridBlock):
         #         type(x).__name__, F.__name__))
         res = self.residual(x)
 
-        print('---------------')
-        print(res.shape)
+        # print('---------------')
+        # print(res.shape)
         # https://github.com/pytorch/vision/blob/1aef87d01eec2c0989458387fa04baebcc86ea7b/torchvision/models/resnet.py
         # A residual block based on the ResNet architecture incorporating use of short-skip connections
         # Uses two successive convolution layers
         # First Conv Block with Conv, BN and activation
         x = self.conv1(x)
-        print(x.shape)
         if self.norm1 != None:
             x = self.norm1(x)
         act1 = F.LeakyReLU(x)  # need more juice on local dev machine
 
-        print(x.shape)
         # logging.info(x.shape)
 
         # Second Conv block with Conv and BN only
         x = self.conv2(act1)
-        print(x.shape)
-
         if self.norm2 != None:
             x = self.norm2(x)
 
@@ -168,7 +164,6 @@ class BaseConvBlock(nn.HybridBlock):
         act2 = F.LeakyReLU(connection)
 
         return act2
-
 
 class DownSampleBlock(nn.HybridBlock):
     """
@@ -236,7 +231,7 @@ class UNet(nn.HybridSequential):
     def __init__(self, in_channels, num_class, **kwargs):
         super(UNet, self).__init__(**kwargs)
 
-        n1 = 8
+        n1 = 64
         filters = [n1, n1 * 2, n1 * 4, n1 * 8, n1 * 16]
 
         # contracting path
