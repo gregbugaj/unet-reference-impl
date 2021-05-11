@@ -41,26 +41,6 @@ class AttentionConvBlock(nn.HybridBlock):
             block.add(gluon.nn.Activation('sigmoid'))
 
             return block
-                        
-        # channels (int) – The dimensionality of the output space,
-        # in_channels (int, default 0) – The number of input channels to this layer.
-        # If not specified, initialization will be deferred to the first time forward is called and in_channels will be inferred from the shape of input data.
-
-        # self.W_g = nn.HybridSequential()
-        # self.W_g.add(nn.Conv2D(in_channels=F_l, channels=F_int,kernel_size=1, strides=(1, 1), padding=0))
-        # self.W_g.add(nn.BatchNorm(in_channels=F_int,axis=1, center=True, scale=True))
-        
-        # self.W_x = nn.HybridSequential()
-        # self.W_x.add(nn.Conv2D(in_channels=F_g, channels=F_int,kernel_size=1, strides=(1, 1), padding=0))
-        # self.W_x.add(nn.BatchNorm(in_channels=F_int,axis=1, center=True, scale=True))
-                     
-
-        # self.psi = nn.HybridSequential()
-        # self.psi.add(nn.Conv2D(in_channels=F_int, channels=1,
-        #              kernel_size=1, strides=(1, 1), padding=0))
-        # self.psi.add(nn.BatchNorm(
-        #     in_channels=1, axis=1, center=True, scale=True))
-        # self.psi.add(gluon.nn.Activation('sigmoid'))
 
         self.W_g = W_Block(F_l, F_int)
         self.W_x = W_Block(F_g, F_int)
@@ -76,8 +56,6 @@ class AttentionConvBlock(nn.HybridBlock):
         psi = self.psi(psi)
         out = x * psi
         
-        # 0.8751614738935438
-        # 0.896316850518875
         return out
 
 class UpsampleConvLayer(nn.HybridBlock):
